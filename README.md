@@ -36,7 +36,7 @@ When you use any repair recipe (from any tab), the script automatically prioriti
 
 Some features require a GGn API key:
 1. Go to your GGn user settings
-2. Generate an API key with "Items" permission
+2. Generate an API key
 3. Enter it in the OPTIONS tab of the panel
 
 ## Development
