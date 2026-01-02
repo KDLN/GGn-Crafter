@@ -17,7 +17,7 @@ A Tampermonkey/Greasemonkey userscript for GazelleGames.net (GGn) that shows pla
 ## Installation
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/) (Chrome, Firefox, Edge) or [Greasemonkey](https://www.greasespot.net/) (Firefox)
-2. [GreasyFork Link](https://greasyfork.org/en/scripts/560668-ggn-crafter
+2. [GreasyFork Link](https://greasyfork.org/en/scripts/560668-ggn-crafter)
 3. Navigate to GGn's inventory or crafting pages
 4. The panel will appear on the right side of the screen
 
