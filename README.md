@@ -45,9 +45,3 @@ This is a single-file userscript. To develop:
 1. Install in Tampermonkey/Greasemonkey
 2. Edit locally and refresh the GGn page to test changes
 3. No build step required
-
-See [CLAUDE.md](CLAUDE.md) for technical details about the codebase structure.
-
-## License
-
-MIT
