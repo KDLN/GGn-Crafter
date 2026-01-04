@@ -10060,7 +10060,7 @@
                                     <div>
                                         <div style="color:#7a9a7a; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:8px; text-align:center;">Valentines</div>
                                         <div style="display:flex; gap:8px;">
-                                            ${craftCardHtml('pinkvalentine', 'Dom and Maria', specialCrafts.pinkValentine, 'https://gazellegames.net/static/common/items/Items/Card/9th_Valentine_Master_Mr_and_Mrs_Pac_Man.png', null, cardCounts)}
+                                            ${craftCardHtml('pinkvalentine', 'Mr. And Mrs. Pac Man', specialCrafts.pinkValentine, 'https://gazellegames.net/static/common/items/Items/Card/9th_Valentine_Master_Mr_and_Mrs_Pac_Man.png', null, cardCounts)}
                                             ${craftCardHtml('brownvalentine', 'Yennefer', specialCrafts.brownValentine, 'https://gazellegames.net/static/common/items/Items/Card/9th_Valentine_Yennefer.png', null, cardCounts)}
                                         </div>
                                     </div>
@@ -12749,3 +12749,4 @@ Iron Ore: 10
     }
 
 })();
+
