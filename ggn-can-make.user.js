@@ -5468,6 +5468,104 @@
     }
 
     // ============================================
+    // TRADING CARD BALANCE CALCULATIONS FOR CARDS PAGE
+    // ============================================
+    
+    function buildCardCounts(inventory) {
+        const counts = {};
+        const add = (id, qty) => {
+            if (!Number.isNaN(id) && qty > 0) counts[id] = (counts[id] || 0) + qty;
+        };
+
+        for (const [k, v] of Object.entries(inventory)) {
+            const id = parseInt(k, 10);
+            const qty = Number(v) || 0;
+            add(id, qty);
+        }
+
+        return counts;
+    }
+
+    function calculateCraftable(cardCounts, randomIds, level1Ids, level2Ids, level3Id, specialIds) {
+        const sumCounts = ids => {
+            if (!ids) return 0;
+            if (Array.isArray(ids)) return ids.reduce((s, id) => s + (cardCounts[id] || 0), 0);
+                return Object.keys(ids).reduce((s, key) => s + (cardCounts[+key] || 0), 0);
+            };
+
+            specialIds = specialIds || [];
+
+            return {
+                randomCount: sumCounts(randomIds),
+                l1Count: sumCounts(level1Ids) + sumCounts(specialIds),
+                l2Count: sumCounts(level2Ids),
+                l3Count: cardCounts[level3Id] || 0
+            };
+    }
+
+    // Renders HTML for the level 3 card box. Special cases (eg chocolate heart based cards) are handled internally, based on key handed to the function.
+    function craftCardHtml(key, label, cards, imgUrl, imgAlt) {
+        const imgAltNormalized = imgAlt || label;
+
+        // Keys for cards that do NOT have a "random" card
+        const keysWithoutRandom = ['bluebirthday', 'gingerbread', 'cupcake', 'retro', 'ghost'];
+        const hasNoRandom = keysWithoutRandom.indexOf(key) !== -1;
+
+        // Chocolate heart information for valentines cards
+        const chocolateHeartsMap = {
+            pinkvalentine: { key: 3000, label: 'Sugar Heart', l1Div: 4, l2Div: 2 },
+            brownvalentine: { key: 3001, label: 'Chocolate Heart', l1Div: 4, l2Div: 2 }
+        };
+        const chocolateHeart = chocolateHeartsMap[key] || null;
+
+        // If this card has no "random" card or is a chocolate heart based card, hide "random"
+        const showRandom = !(hasNoRandom || !!chocolateHeart);
+
+        // Determine what to divide by to make the level 3 card
+        const l1Div = chocolateHeart ? chocolateHeart.l1Div : (hasNoRandom ? 4 : 6); // Level 1 & random card division to make level 3
+        const l2Div = chocolateHeart ? chocolateHeart.l2Div : (hasNoRandom ? 2 : 3); // Level 2 card division to make level 3
+
+        // Chocolate heart count (if any)
+        const heartsId = chocolateHeart ? chocolateHeart.key : undefined;
+        const hearts = (typeof heartsId !== 'undefined' && typeof cardCounts !== 'undefined') ? (cardCounts[heartsId] || 0) : 0;
+
+        // Calculate total level 3s craftable
+        let l3Craftable;
+        if (chocolateHeart) {
+            l3Craftable = (cards.l3Count + Math.floor(Math.min(cards.l1Count / l1Div, hearts / 3)) + Math.floor(Math.min(cards.l2Count / l2Div, hearts))).toFixed(2);
+        } else {
+            const l3Small = ((showRandom ? cards.randomCount / l1Div : 0) +
+                cards.l1Count / l1Div +
+                cards.l2Count / l2Div +
+                cards.l3Count).toFixed(2);
+            
+            l3Craftable = l3Small;
+        }
+        
+        const randomSmall = showRandom ? (cards.randomCount / l1Div).toFixed(2) : null;
+        const l3CraftableFromL1 = (cards.l1Count / l1Div).toFixed(2);
+        const l3CraftableFromL2 = (cards.l2Count / l2Div).toFixed(2);
+
+        const l3CraftableStyle = 'font-size:10px; color:#9a9ab0; margin-left:6px;';
+
+        return `<div style="flex:1; background:#131318; border:1px solid #2a2a32; padding:10px; border-radius:6px; display:flex; align-items:stretch; min-width:0; height:126px; ${hasNoRandom ? 'position:relative;' : ''}">
+                    <div style="min-width:0; flex:1; display:flex; flex-direction:column; justify-content:flex-start; align-items:flex-start; height:100%;">
+                        <div style="display:flex; align-items:center; gap:8px; overflow:hidden; width:100%;">
+                            <img src="${imgUrl}" alt="${imgAltNormalized}" style="width:20px; height:20px; object-fit:contain; border-radius:4px; flex-shrink:0;" />
+                            <span style="display:inline-block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; color:#c9c9d0; font-weight:500;">${label} <span style="${l3CraftableStyle} color:#D3AF37;">(${l3Craftable})</span></span>
+                        </div>
+
+                        <div style="${hasNoRandom ? 'margin-top:auto; margin-bottom:auto;' : 'margin-top:6px;'} display:flex; flex-direction:column; gap:2px; align-items:flex-start; font-size:12px; color:#9a9ab0; width:100%;">
+                            ${showRandom ? `<div>Random: <strong style="color:#8fb8ff;">${cards.randomCount}</strong><span style="${l3CraftableStyle}">(${randomSmall})</span></div>` : (heartsId ? `<div>${(chocolateHeart && chocolateHeart.label) || 'Hearts'}: <strong style="color:#8fb8ff;">${hearts}</strong></div>` : '')}
+                            <div>Level 1: <strong style="color:#8aff8a;">${cards.l1Count}</strong><span style="${l3CraftableStyle}">(${l3CraftableFromL1})</span></div>
+                            <div>Level 2: <strong style="color:#c9a227;">${cards.l2Count}</strong><span style="${l3CraftableStyle}">(${l3CraftableFromL2})</span></div>
+                            <div>Level 3: <strong style="color:#ffd36a;">${cards.l3Count}</strong><span style="${l3CraftableStyle}"></span></div>
+                        </div>
+                    </div>
+                </div>`;
+    }
+
+    // ============================================
     // SHARE/EXPORT SYSTEM
     // ============================================
     function exportPlanToText(plan) {
@@ -9056,6 +9154,7 @@
                 <div class="tab" data-tab="books">BOOKS<span class="count">[${ownedBooks.length}]</span></div>
                 <div class="tab" data-tab="inventory">INV</div>
                 <div class="tab" data-tab="stats">STATS</div>
+                <div class="tab" data-tab="card-balances">CARDS</div>
                 <div class="tab" data-tab="options">OPTS</div>
                 <div class="tab" data-tab="more">...</div>
             </div>
@@ -9727,6 +9826,144 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- CARD BALANCES TAB -->
+                ${(() => {
+                // Build card counts once for usage in this tab
+                const cardCounts = buildCardCounts(inventory);
+
+                const crafts = {
+                    birthday: calculateCraftable(cardCounts, [2838], [2829, 2830, 2831], [2833, 2834, 2835], 2836),
+                    bluebirthday: calculateCraftable(cardCounts, null, [3023, 3024, 3026, 3027], [3025, 3028], 3029),
+                    christmas: calculateCraftable(cardCounts, [2707], [2698, 2699, 2700], [2701, 2702, 2703], 2704),
+                    gingerbread: calculateCraftable(cardCounts, null, [2969, 2970, 2973, 2974], [2972, 2975], 2976),
+                    pumpkin: calculateCraftable(cardCounts, [2596], [2589, 2590, 2591], [2592, 2593, 2594], 2595),
+                    cupcake: calculateCraftable(cardCounts, null, [2945, 2946, 2948, 2949], [2947, 2950], 2951),
+                };
+
+                const totalDragons = Math.min(...Object.values(crafts).map(c => Math.floor(c.randomCount / 6 + c.l1Count / 6 + c.l2Count / 3 + c.l3Count)));
+
+                const specialCrafts = {
+                    ghost: calculateCraftable(cardCounts, null, [3263, 3265, 3266, 3267], [3268, 3269], 3270),
+                    retro: calculateCraftable(cardCounts, null, [3151, 3152, 3153, 3155, 3156, 3157, 3159, 3160, 3161], [3154, 3158, 3162], 3163),
+                    pinkValentine: calculateCraftable(cardCounts, null, [2989, 2990, 2986, 2987], [2990, 2989], 2991),
+                    brownValentine: calculateCraftable(cardCounts, null, [2996, 2997, 2993, 2994], [2998, 2995], 2999),
+                };
+
+                const totalSpecialBoxes = Math.min(
+                    Math.floor(
+                        specialCrafts.pinkValentine.l3Count +
+                        Math.floor(Math.min(specialCrafts.pinkValentine.l1Count / 4, (cardCounts[3000] || 0) / 3)) +
+                        Math.floor( Math.min(specialCrafts.pinkValentine.l2Count / 2, (cardCounts[3000] || 0) / 1))
+                    ),
+                    Math.floor(
+                        specialCrafts.brownValentine.l3Count +
+                        Math.floor(Math.min(specialCrafts.brownValentine.l1Count / 4,(cardCounts[3001] || 0) / 3)) +
+                        Math.floor(Math.min(specialCrafts.brownValentine.l2Count / 2,(cardCounts[3001] || 0) / 1))
+                    ),
+                    Math.floor(
+                        specialCrafts.ghost.l3Count +
+                        Math.floor(specialCrafts.ghost.l1Count / 4) +
+                        Math.floor(specialCrafts.ghost.l2Count / 2)
+                    ),
+                    Math.floor(
+                        specialCrafts.retro.l3Count +
+                        Math.floor(specialCrafts.retro.l1Count / 9) +
+                        Math.floor(specialCrafts.retro.l2Count / 3)
+                    )
+                );
+
+                // TODO: Add Flame Card Boxes
+
+                return `<div class="tab-content" id="tab-card-balances"
+                            <div class="inventory-header">
+                                <div class="inv-stat"><span class="inv-label">CARD BALANCES</span></div>
+                            </div>
+
+                            <!-- Dragon Cards -->
+                            <div class="book-item collapsed" style="border-bottom: 1px solid #2a2a32;">
+                                <div class="book-header" style="padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; background: #1e1e24;">
+                                    <div>
+                                        <div style="font-weight: 500; color: #e8e8f0;">Dragon Cards</div>
+                                        <div style="font-size: 11px; color: #e6b86a; margin-top: 2px;">Total Dragons Craftable: <strong style="color:#e6b86a; font-weight:600;">${totalDragons}</strong></div>
+                                    </div>
+
+                                    <div style="text-align: right; display:flex; align-items:center; gap:8px;"><span class="book-toggle">></span></div>
+                                </div>
+
+                                <div class="book-recipes">
+                                    <div style="display:flex; flex-direction:column; gap:10px;">
+                                        <div>
+                                            <div style="color:#7a9a7a; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:8px; text-align:center;">Birthday</div>
+                                            <div style="display:flex; gap:8px;">
+                                                ${craftCardHtml('birthday', 'Supreme Gazelle', crafts.birthday, 'https://gazellegames.net/static/common/items/Items/Card/Birthday_Supreme_Gazelle.png')}
+                                                ${craftCardHtml('bluebirthday', 'After Party', crafts.bluebirthday, 'https://gazellegames.net/static/common/items/Items/Card/10th_Birthday_After_Party.png')}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div style="color:#7a9a7a; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:8px; text-align:center;">Christmas</div>
+                                            <div style="display:flex; gap:8px;">
+                                                ${craftCardHtml('christmas', 'Christmas Cheer', crafts.christmas, 'https://gazellegames.net/static/common/items/Items/Card/Christmas_Christmas_Cheer.png')}
+                                                ${craftCardHtml('gingerbread', 'Baby Yoda With Gingerbread', crafts.gingerbread, 'https://gazellegames.net/static/common/items/Items/Card/9th_Christmas_Baby_Yoda.png', 'Baby Yoda')}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div style="color:#7a9a7a; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:8px; text-align:center;">Halloween</div>
+                                            <div style="display:flex; gap:8px;">
+                                                ${craftCardHtml('pumpkin', 'Lame Pumpkin Trio', crafts.pumpkin, 'https://gazellegames.net/static/common/items/Items/Card/Halloween_Lame_Pumpkin_Trio.png')}
+                                                ${craftCardHtml('cupcake', 'Who eats whom?', crafts.cupcake, 'https://gazellegames.net/static/common/items/Items/Card/9th_Halloween_Who_eats_whom.png')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Special Box Cards -->
+                            <div class="book-item collapsed" style="border-bottom: 1px solid #2a2a32;">
+                                <div class="book-header" style="padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; background: #1e1e24;">
+                                    <div>
+                                        <div style="font-weight: 500; color: #e8e8f0;">Special Box Cards</div>
+                                        <div style="font-size: 11px; color: #e6b86a; margin-top: 2px;">Total Special Boxes Craftable: <strong style="color:#e6b86a; font-weight:600;">${totalSpecialBoxes}</strong></div>
+                                    </div>
+
+                                    <div style="text-align: right; display:flex; align-items:center; gap:8px;"><span class="book-toggle">></span></div>
+                                </div>
+
+                                <div class="book-recipes">
+                                    <div style="display:flex; flex-direction:column; gap:10px;">
+                                        <div>
+                                            <div style="color:#7a9a7a; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:8px; text-align:center;">Valentines</div>
+                                            <div style="display:flex; gap:8px;">
+                                                ${craftCardHtml('pinkvalentine', 'Dom and Maria', specialCrafts.pinkValentine, 'https://gazellegames.net/static/common/items/Items/Card/9th_Valentine_Master_Mr_and_Mrs_Pac_Man.png')}
+                                                ${craftCardHtml('brownvalentine', 'Yennefer', specialCrafts.brownValentine, 'https://gazellegames.net/static/common/items/Items/Card/9th_Valentine_Yennefer.png')}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div style="color:#7a9a7a; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:8px; text-align:center;">Halloween</div>
+                                            <div style="display:flex; justify-content:center; gap:8px; align-items:stretch;">
+                                                <div style="flex:0 0 calc(50% - 4px); max-width:50%;">
+                                                    ${craftCardHtml('ghost', 'King Boo', specialCrafts.ghost, 'https://gazellegames.net/static/common/items/Items/Card/Halloween2021_King_Boo.png')}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <div style="color:#7a9a7a; font-size:12px; font-weight:700; text-transform:uppercase; margin-bottom:8px; text-align:center;">Birthday</div>
+                                            <div style="display:flex; justify-content:center; gap:8px; align-items:stretch;">
+                                                <div style="flex:0 0 calc(50% - 4px); max-width:50%;">
+                                                    ${craftCardHtml('retro', 'Black Mage', specialCrafts.retro, 'https://gazellegames.net/static/common/items/Items/Card/11th_Birthday_Black_Mage.png')}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                })()}
 
                 <!-- OPTIONS TAB -->
                 <div class="tab-content" id="tab-options">
