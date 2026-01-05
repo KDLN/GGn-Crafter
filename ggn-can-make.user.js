@@ -5,7 +5,7 @@
 // @match       https://gazellegames.net/user.php?action=inventory*
 // @match       https://gazellegames.net/user.php?action=crafting*
 // @icon         https://gazellegames.net/favicon.ico
-// @version     1.3.2
+// @version     1.3.3
 // @author      kdln | Based on FinalDoom's Quick Crafter data
 // @license     ISC
 // @grant       GM.getValue
@@ -9974,7 +9974,7 @@
                     const specialCrafts = {
                         ghost: calculateCraftable(cardCounts, null, [3263, 3265, 3266, 3267], [3268, 3269], 3270),
                         retro: calculateCraftable(cardCounts, null, [3151, 3152, 3153, 3155, 3156, 3157, 3159, 3160, 3161], [3154, 3158, 3162], 3163),
-                        pinkValentine: calculateCraftable(cardCounts, null, [2989, 2990, 2986, 2987], [2990, 2989], 2991),
+                        pinkValentine: calculateCraftable(cardCounts, null, [2989, 2990, 2986, 2987], [2988, 2991], 2992),
                         brownValentine: calculateCraftable(cardCounts, null, [2996, 2997, 2993, 2994], [2998, 2995], 2999),
                     };
 
@@ -12749,4 +12749,5 @@ Iron Ore: 10
     }
 
 })();
+
 
